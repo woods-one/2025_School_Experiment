@@ -97,3 +97,54 @@ func GetIdeologyStats(w http.ResponseWriter, r *http.Request) {
 
 	json.NewEncoder(w).Encode(stats)
 }
+
+func GetAllUsers(w http.ResponseWriter, r *http.Request) {
+	var users []models.User
+	if err := db.DB.Find(&users).Error; err != nil {
+		http.Error(w, "Database error", http.StatusInternalServerError)
+		return
+	}
+
+	// ユーザー情報をレスポンス用に整形
+	var responses []map[string]interface{}
+	for _, u := range users {
+		responses = append(responses, map[string]interface{}{
+			"id":         u.ID,
+			"email":      u.Email,
+			"name":       u.Name,
+			"birthday":   u.Birthday.Format("2006-01-02"),
+			"ideology":   u.Ideology,
+			"created_at": u.CreatedAt,
+		})
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(responses)
+}
+
+func GetUserByID(w http.ResponseWriter, r *http.Request) {
+	idStr := strings.TrimPrefix(r.URL.Path, "/users/")
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		http.Error(w, "Invalid ID", http.StatusBadRequest)
+		return
+	}
+
+	var user models.User
+	if err := db.DB.First(&user, id).Error; err != nil {
+		http.Error(w, "User not found", http.StatusNotFound)
+		return
+	}
+
+	response := map[string]interface{}{
+		"id":         user.ID,
+		"email":      user.Email,
+		"name":       user.Name,
+		"birthday":   user.Birthday.Format("2006-01-02"),
+		"ideology":   user.Ideology,
+		"created_at": user.CreatedAt,
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(response)
+}

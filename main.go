@@ -1,3 +1,4 @@
+// main.go
 package main
 
 import (
@@ -26,6 +27,8 @@ func main() {
 		switch r.Method {
 		case http.MethodPost:
 			handlers.CreateUser(w, r)
+		case http.MethodGet:
+			handlers.GetAllUsers(w, r)
 		default:
 			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		}
@@ -35,6 +38,8 @@ func main() {
 		switch r.Method {
 		case http.MethodPatch:
 			handlers.UpdateIdeology(w, r)
+		case http.MethodGet:
+			handlers.GetUserByID(w, r)
 		default:
 			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		}
