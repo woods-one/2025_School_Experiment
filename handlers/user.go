@@ -1,23 +1,24 @@
 package handlers
 
 import (
+	"Shiso_Checker/db"
+	"Shiso_Checker/models"
+	"Shiso_Checker/utils"
 	"encoding/json"
 	"net/http"
 	"strconv"
 	"strings"
 	"time"
 
-	"Shiso_Checker/db"
-	"Shiso_Checker/models"
-	"Shiso_Checker/utils"
+	"golang.org/x/crypto/bcrypt"
 )
 
 func CreateUser(w http.ResponseWriter, r *http.Request) {
-	// 受信用の構造体：Birthday は string
 	var input struct {
 		Email    string `json:"email"`
 		Name     string `json:"name"`
-		Birthday string `json:"birthday"` // ← ここを string に
+		Birthday string `json:"birthday"`
+		Password string `json:"password"`
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
@@ -25,18 +26,25 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// "2006-01-02" 形式で日付をパース
 	bday, err := time.Parse("2006-01-02", input.Birthday)
 	if err != nil {
-		http.Error(w, "Invalid date format. Use YYYY-MM-DD", http.StatusBadRequest)
+		http.Error(w, "Invalid date format", http.StatusBadRequest)
+		return
+	}
+
+	// パスワードハッシュ化
+	hash, err := bcrypt.GenerateFromPassword([]byte(input.Password), bcrypt.DefaultCost)
+	if err != nil {
+		http.Error(w, "Failed to hash password", http.StatusInternalServerError)
 		return
 	}
 
 	user := models.User{
-		Email:     input.Email,
-		Name:      input.Name,
-		Birthday:  bday,
-		CreatedAt: time.Now(),
+		Email:        input.Email,
+		Name:         input.Name,
+		Birthday:     bday,
+		PasswordHash: string(hash),
+		CreatedAt:    time.Now(),
 	}
 
 	if err := db.DB.Create(&user).Error; err != nil {
@@ -44,8 +52,17 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// パスワードはレスポンスに含めない
+	response := map[string]interface{}{
+		"id":         user.ID,
+		"email":      user.Email,
+		"name":       user.Name,
+		"birthday":   user.Birthday.Format("2006-01-02"),
+		"created_at": user.CreatedAt,
+	}
+
 	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(user)
+	json.NewEncoder(w).Encode(response)
 }
 
 func UpdateIdeology(w http.ResponseWriter, r *http.Request) {

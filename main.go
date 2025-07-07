@@ -4,6 +4,7 @@ package main
 import (
 	"Shiso_Checker/db"
 	"Shiso_Checker/handlers"
+	"Shiso_Checker/models"
 	"log"
 	"net/http"
 )
@@ -22,6 +23,11 @@ func enableCORS(h http.Handler) http.Handler {
 
 func main() {
 	db.Init()
+
+	err := db.DB.AutoMigrate(&models.User{})
+	if err != nil {
+		log.Fatalf("AutoMigrate failed: %v", err)
+	}
 
 	http.HandleFunc("/users", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
@@ -46,6 +52,7 @@ func main() {
 	})
 
 	http.HandleFunc("/stats/ideology", handlers.GetIdeologyStats)
+	http.HandleFunc("/login", handlers.Login)
 
 	log.Println("Server running at http://localhost:8080")
 	http.ListenAndServe(":8080", enableCORS(http.DefaultServeMux))
