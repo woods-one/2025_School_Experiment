@@ -124,8 +124,7 @@ func GetAllUsers(w http.ResponseWriter, r *http.Request) {
 	for _, u := range users {
 		responses = append(responses, map[string]interface{}{
 			"id":         u.ID,
-			"email":      u.Email,
-			"name":       u.Name,
+			"user_id":    u.UserID,
 			"birthday":   u.Birthday.Format("2006-01-02"),
 			"ideology":   u.Ideology,
 			"created_at": u.CreatedAt,
@@ -152,8 +151,7 @@ func GetUserByID(w http.ResponseWriter, r *http.Request) {
 
 	response := map[string]interface{}{
 		"id":         user.ID,
-		"email":      user.Email,
-		"name":       user.Name,
+		"user_id":    user.UserID,
 		"birthday":   user.Birthday.Format("2006-01-02"),
 		"ideology":   user.Ideology,
 		"created_at": user.CreatedAt,
