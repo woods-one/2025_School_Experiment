@@ -40,12 +40,27 @@ func main() {
 		}
 	})
 
+	http.HandleFunc("/users", func(w http.ResponseWriter, r *http.Request) {
+		switch r.Method {
+		case http.MethodPost:
+			handlers.CreateUser(w, r)
+		case http.MethodGet:
+			handlers.GetAllUsers(w, r)
+		case http.MethodDelete:
+			handlers.DeleteAllUsers(w, r)
+		default:
+			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		}
+	})
+
 	http.HandleFunc("/users/", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
-		case http.MethodPatch:
-			handlers.UpdateIdeology(w, r)
 		case http.MethodGet:
 			handlers.GetUserByID(w, r)
+		case http.MethodPatch:
+			handlers.UpdateIdeology(w, r)
+		case http.MethodDelete:
+			handlers.DeleteUser(w, r)
 		default:
 			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		}

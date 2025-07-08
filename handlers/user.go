@@ -160,3 +160,35 @@ func GetUserByID(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(response)
 }
+
+func DeleteUser(w http.ResponseWriter, r *http.Request) {
+	idStr := strings.TrimPrefix(r.URL.Path, "/users/")
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		http.Error(w, "Invalid user ID", http.StatusBadRequest)
+		return
+	}
+
+	// 実行前に存在確認（なくても Delete はできるが 404 出したい場合）
+	var user models.User
+	if err := db.DB.First(&user, id).Error; err != nil {
+		http.Error(w, "User not found", http.StatusNotFound)
+		return
+	}
+
+	// 削除処理
+	if err := db.DB.Delete(&user).Error; err != nil {
+		http.Error(w, "Failed to delete user", http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent) // 204 No Content
+}
+
+func DeleteAllUsers(w http.ResponseWriter, r *http.Request) {
+	if err := db.DB.Exec("DELETE FROM users").Error; err != nil {
+		http.Error(w, "Failed to delete users", http.StatusInternalServerError)
+		return
+	}
+	w.WriteHeader(http.StatusNoContent) // 204 No Content
+}
