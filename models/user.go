@@ -13,10 +13,9 @@ const (
 
 type User struct {
 	ID           uint      `gorm:"primaryKey" json:"id"`
-	Email        string    `gorm:"uniqueIndex" json:"email"`
-	Name         string    `json:"name"`
+	UserID       string    `json:"user_id"`
 	Birthday     time.Time `json:"birthday"`
 	Ideology     *Ideology `json:"ideology"`
-	PasswordHash string    `json:"-"` // ← 生のパスワードは返さない
+	PasswordHash string    `json:"-"`
 	CreatedAt    time.Time `json:"created_at"`
 }

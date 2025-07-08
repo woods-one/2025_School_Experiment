@@ -15,8 +15,7 @@ import (
 
 func CreateUser(w http.ResponseWriter, r *http.Request) {
 	var input struct {
-		Email    string `json:"email"`
-		Name     string `json:"name"`
+		UserID   string `json:"user_id"`
 		Birthday string `json:"birthday"`
 		Password string `json:"password"`
 	}
@@ -40,8 +39,7 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	user := models.User{
-		Email:        input.Email,
-		Name:         input.Name,
+		UserID:       input.UserID,
 		Birthday:     bday,
 		PasswordHash: string(hash),
 		CreatedAt:    time.Now(),
@@ -52,12 +50,11 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// パスワードはレスポンスに含めない
 	response := map[string]interface{}{
 		"id":         user.ID,
-		"email":      user.Email,
-		"name":       user.Name,
+		"user_id":    user.UserID,
 		"birthday":   user.Birthday.Format("2006-01-02"),
+		"ideology":   user.Ideology,
 		"created_at": user.CreatedAt,
 	}
 
