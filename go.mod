@@ -1,6 +1,8 @@
 module github.com/woods-one/2025_School_Experiment
 
-go 1.19
+go 1.23.0
+
+toolchain go1.24.5
 
 require (
 	github.com/golang-jwt/jwt/v5 v5.2.2
