@@ -7,8 +7,9 @@ import (
 type Ideology string
 
 const (
-	Right Ideology = "right"
-	Left  Ideology = "left"
+	Right  Ideology = "right"
+	Left   Ideology = "left"
+	Center Ideology = "center"
 )
 
 type User struct {
