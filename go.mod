@@ -1,4 +1,4 @@
-module Shiso_Checker
+module github.com/woods-one/2025_School_Experiment
 
 go 1.19
 

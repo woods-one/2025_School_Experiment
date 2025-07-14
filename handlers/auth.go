@@ -6,8 +6,9 @@ import (
 	"os"
 	"time"
 
-	"Shiso_Checker/db"
-	"Shiso_Checker/models"
+	"github.com/woods-one/2025_School_Experiment/models"
+
+	"github.com/woods-one/2025_School_Experiment/db"
 
 	"github.com/golang-jwt/jwt/v5"
 	"golang.org/x/crypto/bcrypt"

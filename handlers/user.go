@@ -1,14 +1,15 @@
 package handlers
 
 import (
-	"Shiso_Checker/db"
-	"Shiso_Checker/models"
-	"Shiso_Checker/utils"
 	"encoding/json"
 	"net/http"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/woods-one/2025_School_Experiment/db"
+	"github.com/woods-one/2025_School_Experiment/models"
+	"github.com/woods-one/2025_School_Experiment/utils"
 
 	"golang.org/x/crypto/bcrypt"
 )

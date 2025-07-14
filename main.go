@@ -4,9 +4,9 @@ import (
 	"log"
 	"net/http"
 
-	"Shiso_Checker/db"
-	"Shiso_Checker/handlers"
-	"Shiso_Checker/models"
+	"github.com/woods-one/2025_School_Experiment/db"
+	"github.com/woods-one/2025_School_Experiment/handlers"
+	"github.com/woods-one/2025_School_Experiment/models"
 )
 
 func enableCORS(h http.Handler) http.Handler {
