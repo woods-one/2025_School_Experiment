@@ -85,12 +85,13 @@ func GetCurrentUser(c *gin.Context) {
 }
 
 func UpdateIdeology(c *gin.Context) {
-	idStr := c.Param("id")
-	id, err := strconv.Atoi(idStr)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ID"})
+	userIDInterface, exists := c.Get("userID") // ミドルウェアで設定されたuserIDを取得
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
 		return
 	}
+
+	userID := userIDInterface.(uint)
 
 	var payload struct {
 		Ideology models.Ideology `json:"ideology"`
@@ -101,13 +102,16 @@ func UpdateIdeology(c *gin.Context) {
 	}
 
 	var user models.User
-	if err := db.DB.First(&user, id).Error; err != nil {
+	if err := db.DB.First(&user, userID).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
 		return
 	}
 
 	user.Ideology = &payload.Ideology
-	db.DB.Save(&user)
+	if err := db.DB.Save(&user).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update ideology"})
+		return
+	}
 
 	c.Status(http.StatusNoContent)
 }

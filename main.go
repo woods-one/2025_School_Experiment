@@ -38,7 +38,6 @@ func main() {
 	r.GET("/users", handlers.GetAllUsers)
 	r.DELETE("/users", handlers.DeleteAllUsers)
 	r.GET("/users/:id", handlers.GetUserByID)
-	r.PATCH("/users/:id", handlers.UpdateIdeology)
 	r.DELETE("/users/:id", handlers.DeleteUser)
 	r.GET("/stats/ideology", handlers.GetIdeologyStats)
 
@@ -47,6 +46,7 @@ func main() {
 	auth.Use(handlers.AuthMiddleware())
 	{
 		auth.GET("/users/me", handlers.GetCurrentUser)
+		auth.PATCH("/users/me/ideology", handlers.UpdateIdeology)
 	}
 
 	log.Println("Server running at http://localhost:8080")
