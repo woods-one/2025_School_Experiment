@@ -85,29 +85,39 @@ func GetCurrentUser(c *gin.Context) {
 }
 
 func UpdateIdeology(c *gin.Context) {
-	userIDInterface, exists := c.Get("userID") // ミドルウェアで設定されたuserIDを取得
+	userIDInterface, exists := c.Get("user_id") // 正しいキーを使う
 	if !exists {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
 		return
 	}
 
-	userID := userIDInterface.(uint)
+	userIDStr, ok := userIDInterface.(string)
+	if !ok {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid user ID in context"})
+		return
+	}
 
 	var payload struct {
-		Ideology models.Ideology `json:"ideology"`
+		Ideology string `json:"ideology"` // stringで受ける
 	}
 	if err := c.BindJSON(&payload); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input"})
 		return
 	}
 
+	if payload.Ideology != "left" && payload.Ideology != "center" && payload.Ideology != "right" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ideology value"})
+		return
+	}
+
 	var user models.User
-	if err := db.DB.First(&user, userID).Error; err != nil {
+	if err := db.DB.Where("user_id = ?", userIDStr).First(&user).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
 		return
 	}
 
-	user.Ideology = &payload.Ideology
+	user.Ideology = &models.Ideology{Value: payload.Ideology}
+
 	if err := db.DB.Save(&user).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update ideology"})
 		return
