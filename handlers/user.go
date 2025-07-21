@@ -116,7 +116,8 @@ func UpdateIdeology(c *gin.Context) {
 		return
 	}
 
-	user.Ideology = &models.Ideology{Value: payload.Ideology}
+	val := models.Ideology(payload.Ideology) // ここを修正
+	user.Ideology = &val
 
 	if err := db.DB.Save(&user).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update ideology"})
