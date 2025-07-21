@@ -1,41 +1,39 @@
 package handlers
 
 import (
-	"encoding/json"
 	"net/http"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/woods-one/2025_School_Experiment/db"
 	"github.com/woods-one/2025_School_Experiment/models"
 	"github.com/woods-one/2025_School_Experiment/utils"
 
+	"github.com/gin-gonic/gin"
 	"golang.org/x/crypto/bcrypt"
 )
 
-func CreateUser(w http.ResponseWriter, r *http.Request) {
+func CreateUser(c *gin.Context) {
 	var input struct {
 		UserID   string `json:"user_id"`
 		Birthday string `json:"birthday"`
 		Password string `json:"password"`
 	}
 
-	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
-		http.Error(w, "Invalid input", http.StatusBadRequest)
+	if err := c.BindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input"})
 		return
 	}
 
 	bday, err := time.Parse("2006-01-02", input.Birthday)
 	if err != nil {
-		http.Error(w, "Invalid date format", http.StatusBadRequest)
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid date format"})
 		return
 	}
 
-	// パスワードハッシュ化
 	hash, err := bcrypt.GenerateFromPassword([]byte(input.Password), bcrypt.DefaultCost)
 	if err != nil {
-		http.Error(w, "Failed to hash password", http.StatusInternalServerError)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to hash password"})
 		return
 	}
 
@@ -47,7 +45,7 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := db.DB.Create(&user).Error; err != nil {
-		http.Error(w, "Database error", http.StatusInternalServerError)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Database error"})
 		return
 	}
 
@@ -59,39 +57,38 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 		"created_at": user.CreatedAt,
 	}
 
-	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(response)
+	c.JSON(http.StatusCreated, response)
 }
 
-func UpdateIdeology(w http.ResponseWriter, r *http.Request) {
-	idStr := strings.TrimPrefix(r.URL.Path, "/users/")
+func UpdateIdeology(c *gin.Context) {
+	idStr := c.Param("id")
 	id, err := strconv.Atoi(idStr)
 	if err != nil {
-		http.Error(w, "Invalid ID", http.StatusBadRequest)
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ID"})
 		return
 	}
 
 	var payload struct {
 		Ideology models.Ideology `json:"ideology"`
 	}
-	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
-		http.Error(w, "Invalid input", http.StatusBadRequest)
+	if err := c.BindJSON(&payload); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input"})
 		return
 	}
 
 	var user models.User
 	if err := db.DB.First(&user, id).Error; err != nil {
-		http.Error(w, "User not found", http.StatusNotFound)
+		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
 		return
 	}
 
 	user.Ideology = &payload.Ideology
 	db.DB.Save(&user)
 
-	w.WriteHeader(http.StatusNoContent)
+	c.Status(http.StatusNoContent)
 }
 
-func GetIdeologyStats(w http.ResponseWriter, r *http.Request) {
+func GetIdeologyStats(c *gin.Context) {
 	var users []models.User
 	db.DB.Find(&users)
 
@@ -110,17 +107,16 @@ func GetIdeologyStats(w http.ResponseWriter, r *http.Request) {
 		stats[group][*u.Ideology]++
 	}
 
-	json.NewEncoder(w).Encode(stats)
+	c.JSON(http.StatusOK, stats)
 }
 
-func GetAllUsers(w http.ResponseWriter, r *http.Request) {
+func GetAllUsers(c *gin.Context) {
 	var users []models.User
 	if err := db.DB.Find(&users).Error; err != nil {
-		http.Error(w, "Database error", http.StatusInternalServerError)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Database error"})
 		return
 	}
 
-	// ユーザー情報をレスポンス用に整形
 	var responses []map[string]interface{}
 	for _, u := range users {
 		responses = append(responses, map[string]interface{}{
@@ -132,21 +128,20 @@ func GetAllUsers(w http.ResponseWriter, r *http.Request) {
 		})
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(responses)
+	c.JSON(http.StatusOK, responses)
 }
 
-func GetUserByID(w http.ResponseWriter, r *http.Request) {
-	idStr := strings.TrimPrefix(r.URL.Path, "/users/")
+func GetUserByID(c *gin.Context) {
+	idStr := c.Param("id")
 	id, err := strconv.Atoi(idStr)
 	if err != nil {
-		http.Error(w, "Invalid ID", http.StatusBadRequest)
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ID"})
 		return
 	}
 
 	var user models.User
 	if err := db.DB.First(&user, id).Error; err != nil {
-		http.Error(w, "User not found", http.StatusNotFound)
+		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
 		return
 	}
 
@@ -158,38 +153,35 @@ func GetUserByID(w http.ResponseWriter, r *http.Request) {
 		"created_at": user.CreatedAt,
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(response)
+	c.JSON(http.StatusOK, response)
 }
 
-func DeleteUser(w http.ResponseWriter, r *http.Request) {
-	idStr := strings.TrimPrefix(r.URL.Path, "/users/")
+func DeleteUser(c *gin.Context) {
+	idStr := c.Param("id")
 	id, err := strconv.Atoi(idStr)
 	if err != nil {
-		http.Error(w, "Invalid user ID", http.StatusBadRequest)
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID"})
 		return
 	}
 
-	// 実行前に存在確認（なくても Delete はできるが 404 出したい場合）
 	var user models.User
 	if err := db.DB.First(&user, id).Error; err != nil {
-		http.Error(w, "User not found", http.StatusNotFound)
+		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
 		return
 	}
 
-	// 削除処理
 	if err := db.DB.Delete(&user).Error; err != nil {
-		http.Error(w, "Failed to delete user", http.StatusInternalServerError)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete user"})
 		return
 	}
 
-	w.WriteHeader(http.StatusNoContent) // 204 No Content
+	c.Status(http.StatusNoContent)
 }
 
-func DeleteAllUsers(w http.ResponseWriter, r *http.Request) {
+func DeleteAllUsers(c *gin.Context) {
 	if err := db.DB.Exec("DELETE FROM users").Error; err != nil {
-		http.Error(w, "Failed to delete users", http.StatusInternalServerError)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete users"})
 		return
 	}
-	w.WriteHeader(http.StatusNoContent) // 204 No Content
+	c.Status(http.StatusNoContent)
 }

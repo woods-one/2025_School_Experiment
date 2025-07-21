@@ -1,56 +1,54 @@
 package handlers
 
 import (
-	"encoding/json"
 	"net/http"
 	"os"
-	"time"
-
-	"github.com/woods-one/2025_School_Experiment/models"
 
 	"github.com/woods-one/2025_School_Experiment/db"
+	"github.com/woods-one/2025_School_Experiment/models"
+	"github.com/woods-one/2025_School_Experiment/utils"
 
-	"github.com/golang-jwt/jwt/v5"
+	"github.com/gin-gonic/gin"
 	"golang.org/x/crypto/bcrypt"
+	"gorm.io/gorm"
 )
 
 var jwtSecret = []byte(os.Getenv("JWT_SECRET"))
 
-func Login(w http.ResponseWriter, r *http.Request) {
-	var input struct {
-		Email    string `json:"email"`
-		Password string `json:"password"`
-	}
-	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
-		http.Error(w, "Invalid input", http.StatusBadRequest)
+type LoginInput struct {
+	UserID   string `json:"user_id"`
+	Password string `json:"password"`
+}
+
+func Login(c *gin.Context) {
+	var input LoginInput
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"message": "無効な入力"})
 		return
 	}
 
 	var user models.User
-	if err := db.DB.Where("email = ?", input.Email).First(&user).Error; err != nil {
-		http.Error(w, "Invalid email or password", http.StatusUnauthorized)
+	if err := db.DB.Where("user_id = ?", input.UserID).First(&user).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			c.JSON(http.StatusUnauthorized, gin.H{"message": "ユーザーが見つかりません"})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"message": "サーバーエラー"})
 		return
 	}
 
+	// パスワード比較
 	if err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(input.Password)); err != nil {
-		http.Error(w, "Invalid email or password", http.StatusUnauthorized)
+		c.JSON(http.StatusUnauthorized, gin.H{"message": "パスワードが間違っています"})
 		return
 	}
 
-	// JWTトークン発行
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"user_id": user.ID,
-		"exp":     time.Now().Add(time.Hour * 72).Unix(),
-	})
-
-	tokenString, err := token.SignedString(jwtSecret)
+	// JWT生成
+	token, err := utils.GenerateJWT(user.UserID)
 	if err != nil {
-		http.Error(w, "Could not generate token", http.StatusInternalServerError)
+		c.JSON(http.StatusInternalServerError, gin.H{"message": "トークン生成エラー"})
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]string{
-		"token": tokenString,
-	})
+	c.JSON(http.StatusOK, gin.H{"token": token})
 }
