@@ -60,6 +60,30 @@ func CreateUser(c *gin.Context) {
 	c.JSON(http.StatusCreated, response)
 }
 
+func GetCurrentUser(c *gin.Context) {
+	userIDVal, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "ユーザーIDが見つかりません"})
+		return
+	}
+
+	userID := userIDVal.(string)
+
+	var user models.User
+	if err := db.DB.Where("user_id = ?", userID).First(&user).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "ユーザーが見つかりません"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"id":         user.ID,
+		"user_id":    user.UserID,
+		"birthday":   user.Birthday.Format("2006-01-02"),
+		"ideology":   user.Ideology,
+		"created_at": user.CreatedAt,
+	})
+}
+
 func UpdateIdeology(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := strconv.Atoi(idStr)

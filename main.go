@@ -20,7 +20,7 @@ func main() {
 
 	r := gin.Default()
 
-	// CORS設定（必要なら）
+	// CORS設定（必要に応じて調整）
 	r.Use(func(c *gin.Context) {
 		c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 		c.Writer.Header().Set("Access-Control-Allow-Methods", "GET, POST, PATCH, DELETE, OPTIONS")
@@ -32,7 +32,7 @@ func main() {
 		c.Next()
 	})
 
-	// ルーティング
+	// 認証不要のルート
 	r.POST("/login", handlers.Login)
 	r.POST("/users", handlers.CreateUser)
 	r.GET("/users", handlers.GetAllUsers)
@@ -41,6 +41,13 @@ func main() {
 	r.PATCH("/users/:id", handlers.UpdateIdeology)
 	r.DELETE("/users/:id", handlers.DeleteUser)
 	r.GET("/stats/ideology", handlers.GetIdeologyStats)
+
+	// 認証が必要なルート
+	auth := r.Group("/")
+	auth.Use(handlers.AuthMiddleware())
+	{
+		auth.GET("/users/me", handlers.GetCurrentUser)
+	}
 
 	log.Println("Server running at http://localhost:8080")
 	if err := r.Run(":8080"); err != nil {
