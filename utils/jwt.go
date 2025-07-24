@@ -9,6 +9,7 @@ import (
 
 var jwtSecret = []byte(os.Getenv("JWT_SECRET"))
 
+// JWTの生成
 func GenerateJWT(userID string) (string, error) {
 	claims := jwt.MapClaims{
 		"user_id": userID,

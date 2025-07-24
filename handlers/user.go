@@ -13,7 +13,10 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+// ユーザー作成
+// POST /users
 func CreateUser(c *gin.Context) {
+	// ユーザー作成に必要な情報
 	var input struct {
 		UserID   string `json:"user_id"`
 		Birthday string `json:"birthday"`
@@ -21,19 +24,19 @@ func CreateUser(c *gin.Context) {
 	}
 
 	if err := c.BindJSON(&input); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "入力内容が不正です"})
 		return
 	}
 
 	bday, err := time.Parse("2006-01-02", input.Birthday)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid date format"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "日付の形式が正しくありません"})
 		return
 	}
 
 	hash, err := bcrypt.GenerateFromPassword([]byte(input.Password), bcrypt.DefaultCost)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to hash password"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "パスワードのハッシュ化に失敗しました"})
 		return
 	}
 
@@ -45,7 +48,7 @@ func CreateUser(c *gin.Context) {
 	}
 
 	if err := db.DB.Create(&user).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Database error"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "データベースエラー"})
 		return
 	}
 
@@ -60,6 +63,8 @@ func CreateUser(c *gin.Context) {
 	c.JSON(http.StatusCreated, response)
 }
 
+// ログインしているユーザーの情報を取得する
+// GET /users/me
 func GetCurrentUser(c *gin.Context) {
 	userIDVal, exists := c.Get("user_id")
 	if !exists {
@@ -84,49 +89,54 @@ func GetCurrentUser(c *gin.Context) {
 	})
 }
 
+// ユーザーの思想を更新する
+// PATCH /users/me/ideology
 func UpdateIdeology(c *gin.Context) {
-	userIDInterface, exists := c.Get("user_id") // 正しいキーを使う
+	userIDInterface, exists := c.Get("user_id")
 	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "認証されていません"})
 		return
 	}
 
 	userIDStr, ok := userIDInterface.(string)
 	if !ok {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid user ID in context"})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "コンテキスト内のユーザーIDが無効です"})
 		return
 	}
 
+	// left center rightのどれか
 	var payload struct {
 		Ideology string `json:"ideology"` // stringで受ける
 	}
 	if err := c.BindJSON(&payload); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "入力が不正です"})
 		return
 	}
 
 	if payload.Ideology != "left" && payload.Ideology != "center" && payload.Ideology != "right" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ideology value"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "無効な値です"})
 		return
 	}
 
 	var user models.User
 	if err := db.DB.Where("user_id = ?", userIDStr).First(&user).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+		c.JSON(http.StatusNotFound, gin.H{"error": "ユーザーが見つかりません"})
 		return
 	}
 
-	val := models.Ideology(payload.Ideology) // ここを修正
+	val := models.Ideology(payload.Ideology)
 	user.Ideology = &val
 
 	if err := db.DB.Save(&user).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update ideology"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "値の更新に失敗しました"})
 		return
 	}
 
 	c.Status(http.StatusNoContent)
 }
 
+// 全てのユーザーの思想の統計を取る（年齢別）
+// GET /users/stats/ideology
 func GetIdeologyStats(c *gin.Context) {
 	var users []models.User
 	db.DB.Find(&users)
@@ -149,10 +159,12 @@ func GetIdeologyStats(c *gin.Context) {
 	c.JSON(http.StatusOK, stats)
 }
 
+// 全ユーザーの情報を取得する
+// GET /users
 func GetAllUsers(c *gin.Context) {
 	var users []models.User
 	if err := db.DB.Find(&users).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Database error"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "データベースエラー"})
 		return
 	}
 
@@ -170,17 +182,19 @@ func GetAllUsers(c *gin.Context) {
 	c.JSON(http.StatusOK, responses)
 }
 
+// IDからユーザーの情報を取得する
+// GET /users/:id
 func GetUserByID(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := strconv.Atoi(idStr)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ID"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "ユーザーIDが無効です"})
 		return
 	}
 
 	var user models.User
 	if err := db.DB.First(&user, id).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+		c.JSON(http.StatusNotFound, gin.H{"error": "ユーザーが見つかりません"})
 		return
 	}
 
@@ -195,31 +209,35 @@ func GetUserByID(c *gin.Context) {
 	c.JSON(http.StatusOK, response)
 }
 
+// IDからユーザーを削除する
+// DELETE /users/:id
 func DeleteUser(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := strconv.Atoi(idStr)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "ユーザーIDが無効です"})
 		return
 	}
 
 	var user models.User
 	if err := db.DB.First(&user, id).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+		c.JSON(http.StatusNotFound, gin.H{"error": "ユーザーが見つかりません"})
 		return
 	}
 
 	if err := db.DB.Delete(&user).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete user"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "ユーザーの削除に失敗しました"})
 		return
 	}
 
 	c.Status(http.StatusNoContent)
 }
 
+// ユーザーを全削除
+// DELETE /users
 func DeleteAllUsers(c *gin.Context) {
 	if err := db.DB.Exec("DELETE FROM users").Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete users"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "ユーザーの全削除に失敗しました"})
 		return
 	}
 	c.Status(http.StatusNoContent)

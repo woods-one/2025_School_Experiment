@@ -10,13 +10,13 @@ import (
 
 var DB *gorm.DB
 
+// データベースの初期化処理
 func Init() {
 	var err error
 	DB, err = gorm.Open(sqlite.Open("users.db"), &gorm.Config{})
 	if err != nil {
-		log.Fatalf("failed to connect database: %v", err)
+		log.Fatalf("データベース接続に失敗しました: %v", err)
 	}
 
-	// 自動マイグレーション
 	DB.AutoMigrate(&models.User{})
 }

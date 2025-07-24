@@ -13,13 +13,16 @@ import (
 	"gorm.io/gorm"
 )
 
+// JWTの秘密鍵の取得 グローバル変数
 var jwtSecret = []byte(os.Getenv("JWT_SECRET"))
 
+// ログインの入力形式の構造体
 type LoginInput struct {
 	UserID   string `json:"user_id"`
 	Password string `json:"password"`
 }
 
+// ログイン関数
 func Login(c *gin.Context) {
 	var input LoginInput
 	if err := c.ShouldBindJSON(&input); err != nil {

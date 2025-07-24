@@ -5,6 +5,7 @@ import (
 	"time"
 )
 
+// 年齢の取得
 func GetAge(birthday time.Time) int {
 	now := time.Now()
 	age := now.Year() - birthday.Year()
@@ -14,6 +15,7 @@ func GetAge(birthday time.Time) int {
 	return age
 }
 
+// 年齢から年代を計算
 func GetAgeGroup(age int) string {
 	return strconv.Itoa(age/10*10) + "s"
 }

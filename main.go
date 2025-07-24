@@ -10,7 +10,7 @@ import (
 )
 
 func main() {
-	// DB 初期化
+	// DB初期化
 	db.Init()
 
 	// 自動マイグレーション
@@ -20,7 +20,7 @@ func main() {
 
 	r := gin.Default()
 
-	// CORS設定（必要に応じて調整）
+	// CORS設定
 	r.Use(func(c *gin.Context) {
 		c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 		c.Writer.Header().Set("Access-Control-Allow-Methods", "GET, POST, PATCH, DELETE, OPTIONS")

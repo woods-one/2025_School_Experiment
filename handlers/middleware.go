@@ -8,11 +8,12 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
+// Ginのミドルウェア関数
 func AuthMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		authHeader := c.GetHeader("Authorization")
 		if authHeader == "" || !strings.HasPrefix(authHeader, "Bearer ") {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "Authorization header missing or invalid"})
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "認証ヘッダーが存在しないか無効です"})
 			c.Abort()
 			return
 		}
@@ -27,26 +28,26 @@ func AuthMiddleware() gin.HandlerFunc {
 		})
 
 		if err != nil || !token.Valid {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid token"})
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "トークンが無効です"})
 			c.Abort()
 			return
 		}
 
 		claims, ok := token.Claims.(jwt.MapClaims)
 		if !ok {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid token claims"})
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "トークンのクレームが無効です"})
 			c.Abort()
 			return
 		}
 
 		userID, ok := claims["user_id"].(string)
 		if !ok {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "User ID not found in token"})
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "トークン内にユーザーIDが見つかりません"})
 			c.Abort()
 			return
 		}
 
-		// userID をコンテキストにセットして後続で使えるようにする
+		// userIDをコンテキストにセットして使えるようにする
 		c.Set("user_id", userID)
 
 		c.Next()
