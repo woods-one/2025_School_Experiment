@@ -24,7 +24,7 @@ func AuthMiddleware() gin.HandlerFunc {
 			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 				return nil, jwt.ErrTokenMalformed
 			}
-			return jwtSecret, nil
+			return JwtSecret, nil
 		})
 
 		if err != nil || !token.Valid {

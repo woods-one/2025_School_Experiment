@@ -7,7 +7,7 @@ import (
 	"time"
 )
 
-var jwtSecret = []byte(os.Getenv("JWT_SECRET"))
+var JwtSecret = []byte(os.Getenv("JWT_SECRET"))
 
 // JWTの生成
 func GenerateJWT(userID string) (string, error) {
@@ -17,5 +17,5 @@ func GenerateJWT(userID string) (string, error) {
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	return token.SignedString(jwtSecret)
+	return token.SignedString(JwtSecret)
 }

@@ -14,7 +14,7 @@ import (
 )
 
 // JWTの秘密鍵の取得 グローバル変数
-var jwtSecret = []byte(os.Getenv("JWT_SECRET"))
+var JwtSecret = []byte(os.Getenv("JWT_SECRET"))
 
 // ログインの入力形式の構造体
 type LoginInput struct {
